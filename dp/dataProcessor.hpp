@@ -3,18 +3,18 @@
 
 #include <vector>
 #include <string>
-#include <map>
-#include "../env/environment.hpp"
 #include "../uni/universe.hpp"
 
-namespace DataProcessor {
+class DataProcessor {
+public:
+    static Universe::DataPackage loadData(const std::string& inputFilename);
+    static std::vector<char> serializeDataPackage(const Universe::DataPackage& dataPackage);
+    static Universe::DataPackage deserializeDataPackage(const std::vector<char>& binaryData);
 
-Universe::DataPackage loadData(const std::string& inputFilename);
-bool processData();
-void convertToBinary();
-void populateToEnvironment(std::map<std::string, std::vector<int>>& data);
-std::vector<char> convertDataPackageToBinary(const Universe::DataPackage& dataPackage);
+private:
+    static std::vector<char> serializeDataEntry(const Universe::DataEntry& dataEntry);
+    static Universe::DataEntry deserializeDataEntry(const std::vector<char>& binaryData, size_t& offset);
+};
 
 
-}
 #endif // DP_HPP
