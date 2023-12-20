@@ -5,6 +5,8 @@
 #include "dp/dataProcessor.hpp"
 #include "env/environment.hpp"
 #include "uni/universe.hpp"
+#include "brains/brainImpl.hpp"
+#include "eval/evalHandlerImpl.hpp"
 #include <fstream>
 #include <string>
 
@@ -16,20 +18,23 @@ namespace params {
 
 int main () {
 
-    // Load data from the datasheet
-    Universe::DataPackage data = DataProcessor::loadData("C:/Projects/AI/Self-Training/Evolution/Data/datasheet.csv");
-    
-    // Initialize the BrainManager with the data
-    Universe::BrainManager brainManager(data, params::maxScripts, params::totalRunsLimit);
+    Universe::PreCompleteData data = DataProcessor::loadData("C:/Projects/AI/Self-Training/EvolutionUtanBinary/Data/all_companies_historical_copy.csv");
+        
+    BrainManager brainManager(data, params::maxScripts, params::totalRunsLimit);
 
-    // Run the brains
     brainManager.runBrains();
-    std::cout << "brainManager results are: " << sizeof(brainManager.scriptResults) << std::endl;
-    //Universe::EvaluationManager evaluationManager(brainManager.scriptResults);
 
-    //evaluationManager.printScriptResults();
+    Universe::PreCompleteData EvalData = DataProcessor::loadEvalData("C:/Projects/AI/Self-Training/EvolutionUtanBinary/Data/eval_data.csv"); 
 
-    //double average = brainManager.getAverageEvaluation();
-    //std::cout << "Average evaluation: " << average << std::endl;
+    std::unordered_map<std::string, Universe::PredictionPackage> PredictionData = brainManager.getScriptResults();
+
+    EvaluationHandler evaluationHandler(EvalData, PredictionData);
+    evaluationHandler.comparePredictionsWithActualData();
+
+    try {
+        evaluationHandler.printMAPEResults();
+    }   catch (const std::exception &e) {
+            std::cerr << "Tried and failed" << e.what() << std::endl;
+        }
     return 0;
 }

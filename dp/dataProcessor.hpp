@@ -7,9 +7,10 @@
 
 class DataProcessor {
 public:
-    static Universe::DataPackage loadData(const std::string& inputFilename);
-
+    static Universe::PreCompleteData loadData(const std::string& inputFilename);
+    static Universe::PreCompleteData DataProcessor::loadEvalData(const std::string& inputFilename);
 private:
+
 };
 
 

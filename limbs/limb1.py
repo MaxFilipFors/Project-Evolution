@@ -1,100 +1,93 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
 import json
-import sys
-import ast
+import time
 
-input_size = 1
-hidden_size = 64
-num_layers = 1
-num_epochs = 100
+# Hyperparameters
+input_size = 5
+hidden_size = 100
+num_layers = 2
+output_size = 5
+batch_size = 128
+seq_length = 200
+training_duration = 5
 learning_rate = 0.001
-sequence_length = 5
-eval_epochs = 50
+epochs = 100
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Define the Neural Network Model
-class StockPredictor(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers=1):
-        super(StockPredictor, self).__init__()
+class StockPredictorGRU(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, output_size):
+        super(StockPredictorGRU, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, 1)
+        self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        
-        out, _ = self.lstm(x, (h0, c0))
+        out, _ = self.gru(x, h0)
         out = self.fc(out[:, -1, :])
         return out
 
-def prepare_data(data, sequence_length, scaler):
-    scaled_data = scaler.fit_transform(np.array(data).reshape(-1, 1))
+def prepare_company_data(company_data):
+    data = [[entry['open'], entry['high'], entry['low'], entry['close'], entry['volume']] for entry in company_data['dataPackage']]
+    return np.array(data)
 
-    X, y = [], []
-    for i in range(sequence_length, len(scaled_data)):
-        X.append(scaled_data[i-sequence_length:i, 0])
-        y.append(scaled_data[i, 0])
+def normalize_data(data):
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    return scaler.fit_transform(data), scaler
 
-    return np.array(X), np.array(y)
+def create_sequences(data, seq_length):
+    return np.array([data[i:(i + seq_length)] for i in range(len(data) - seq_length)])
 
-def train_model(model, train_loader, criterion, optimizer, num_epochs):
+def predict(model, company_data, seq_length):
+    data = prepare_company_data(company_data)
+    data_normalized, scaler = normalize_data(data)
+    sequences = create_sequences(data_normalized, seq_length)
+    sequences_tensor = torch.tensor(sequences).float().to(device)
+    model.eval()
+    with torch.no_grad():
+        predictions = model(sequences_tensor).cpu().numpy()
+    return scaler.inverse_transform(predictions)[-1].tolist()  # Return only the last prediction
+
+def train_model(model, train_loader, criterion, optimizer, device, training_duration):
+    start_time = time.time()
     model.train()
-    for epoch in range(num_epochs):
-        for sequences, labels in train_loader:
+    for epoch in range(epochs):
+        for sequences, targets in train_loader:
+            if time.time() - start_time > training_duration:
+                print(f"Training stopped after {training_duration} seconds.", flush=True)
+                return
+            sequences, targets = sequences.to(device), targets.to(device)
             optimizer.zero_grad()
             outputs = model(sequences)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            if epoch % eval_epochs == 0 or epoch == num_epochs - 1:            
-                print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}', flush=True)
 
-def main(data):
-    #print("Received data from C++:", data, flush=True)
-    predictions = {}
-    scalers = {}  # Dictionary to store scalers for each company
+        if epoch % 10 == 0:
+            print(f'Epoch {epoch}, Loss: {loss.item()}', flush=True)
 
-    for companyIndex, stock_numbers in data:
-        scaler = MinMaxScaler(feature_range=(0, 1))
-        X, y = prepare_data(stock_numbers, sequence_length, scaler)
+def combine_and_train(input_data, model, optimizer, criterion, device, training_duration, seq_length, batch_size):
+    all_data = np.concatenate([prepare_company_data(company) for company in input_data])
+    data_normalized, _ = normalize_data(all_data)
+    sequences = create_sequences(data_normalized, seq_length)
+    train_data = torch.tensor(sequences[:-1]).float()
+    target_data = torch.tensor(data_normalized[1:len(sequences)]).float()
+    train_loader = DataLoader(TensorDataset(train_data, target_data), batch_size=batch_size, shuffle=True)
+    train_model(model, train_loader, criterion, optimizer, device, training_duration)
+    return model
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        scalers[companyIndex] = scaler  # Store the scaler
+def main(input_data):
+    model = StockPredictorGRU(input_size, hidden_size, num_layers, output_size).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    criterion = nn.MSELoss()
+    trained_model = combine_and_train(input_data, model, optimizer, criterion, device, training_duration, seq_length, batch_size)
 
-        # Convert to PyTorch tensors
-        X_train = torch.tensor(X_train).float().unsqueeze(-1)
-        y_train = torch.tensor(y_train).float().unsqueeze(-1)
-
-        # Training and model code...
-
-        train_data = torch.utils.data.TensorDataset(X_train, y_train)
-        train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=2, shuffle=True)
-
-        model = StockPredictor(input_size, hidden_size, num_layers)
-        criterion = nn.MSELoss()
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-        train_model(model, train_loader, criterion, optimizer, num_epochs)
-        
-        # Making predictions and inverse scaling
-        model.eval()
-        with torch.no_grad():
-            test_data = torch.tensor(X_test).float().unsqueeze(-1)
-            predicted_stock_numbers = model(test_data).cpu().numpy()
-
-            # Inverse transform the predictions
-            predicted_stock_numbers = scalers[companyIndex].inverse_transform(predicted_stock_numbers.reshape(-1, 1))
-            predictions[companyIndex] = predicted_stock_numbers.flatten().tolist()
-            print(f"Predictions for Company {companyIndex}: {predictions[companyIndex]}", flush=True)
+    predictions = {company['companyIndex']: predict(trained_model, company, seq_length) for company in input_data}
     
-    # Convert predictions to a string representation
-    predictions_str = json.dumps({str(k): v for k, v in predictions.items()})
-    #print("Returning from Python script:", predictions_str, flush=True)
-
-    return predictions_str
+    print("predictions are: ", predictions, flush=True)
+    return json.dumps(predictions)

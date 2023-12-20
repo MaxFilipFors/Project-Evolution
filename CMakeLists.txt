@@ -30,6 +30,8 @@ add_subdirectory(handler)
 add_subdirectory(uni)
 add_subdirectory(env)
 add_subdirectory(dp)
+add_subdirectory(brains)
+add_subdirectory(eval)
 
 # Link Python
 target_link_libraries(main 
@@ -38,4 +40,6 @@ target_link_libraries(main
     dp_library
     env_library
     handler_library
+    brain_library
+    eval_library
 )
