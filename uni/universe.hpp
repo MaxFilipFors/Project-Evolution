@@ -1,12 +1,15 @@
 #ifndef UNIVERSE_HPP
 #define UNIVERSE_HPP
 
+//Libraries
 #include <iostream>
 #include <string>
 #include <vector>
 #include <Python.h>
-#include "../params/params.hpp"
 #include <unordered_map>
+
+//Files
+#include "../params/params.hpp"
 
 namespace Universe {
         

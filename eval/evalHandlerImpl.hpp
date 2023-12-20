@@ -1,9 +1,12 @@
 #ifndef EVALHANDLERIMPL_HPP
 #define EVALHANDLERIMPL_HPP
 
+//Libraries
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+//Files
 #include "../uni/universe.hpp"
 
 class EvaluationHandler {
@@ -19,7 +22,6 @@ private:
     Universe::PreCompleteData evalData;
     std::unordered_map<std::string, Universe::PredictionPackage> predictionResults;
     std::unordered_map<std::string, double> scriptMAPEResults;
-
 
 };
 

@@ -1,9 +1,12 @@
+
+//Libraries
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <cstring>
+
+//Files
 #include "../uni/universe.hpp"
-#include "../env/environment.hpp"
 #include "dataProcessor.hpp"
 #include "C:/Projects/Tools/json-develop/single_include/nlohmann/json.hpp"
 

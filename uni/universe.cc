@@ -1,8 +1,11 @@
-#include "universe.hpp"
+//Libraries
 #include <numeric>
 #include <python.h>
 #include <filesystem>
 #include <iostream>
+
+//Files
+#include "universe.hpp"
 
 namespace Universe {
 

@@ -1,8 +1,11 @@
 #ifndef DP_HPP
 #define DP_HPP
 
+//Libraries
 #include <vector>
 #include <string>
+
+//Files
 #include "../uni/universe.hpp"
 
 class DataProcessor {

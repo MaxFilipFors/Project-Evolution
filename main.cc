@@ -1,15 +1,15 @@
-#include <iostream>
-#include <thread>
 
+//Libraries
 #include <Python.h>
-#include "dp/dataProcessor.hpp"
-#include "env/environment.hpp"
-#include "uni/universe.hpp"
-#include "brains/brainImpl.hpp"
-#include "eval/evalHandlerImpl.hpp"
+#include <iostream>
 #include <fstream>
 #include <string>
 
+//Files
+#include "dp/dataProcessor.hpp"
+#include "uni/universe.hpp"
+#include "brains/brainImpl.hpp"
+#include "eval/evalHandlerImpl.hpp"
 
 namespace params {
     size_t maxScripts = 10;

@@ -1,1 +1,1 @@
-# neuroEvolution
+# Personal AI project

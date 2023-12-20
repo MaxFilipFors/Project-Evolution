@@ -1,7 +1,5 @@
 #include "brainImpl.hpp"
 
-//Impl
-
 std::optional<Universe::PredictionPackage> Brain::operator()(){
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
@@ -15,7 +13,6 @@ std::optional<Universe::PredictionPackage> Brain::operator()(){
     if (pModule != nullptr) {
         PyObject* pFunc = PyObject_GetAttrString(pModule, "main");
         if (pFunc && PyCallable_Check(pFunc)) {
-            // Prepare data for Python script
             PyObject* pyDataList = PyList_New(initialData.CompleteData.size());
             for (size_t i = 0; i < initialData.CompleteData.size(); ++i) {
                 const auto& companyData = initialData.CompleteData[i];
@@ -38,7 +35,6 @@ std::optional<Universe::PredictionPackage> Brain::operator()(){
                 PyList_SetItem(pyDataList, i, pyCompanyData);
             }
 
-            // Call the Python function with pyDataList
             PyObject* pArgs = PyTuple_New(1);
             PyTuple_SetItem(pArgs, 0, pyDataList);
 
@@ -82,7 +78,7 @@ std::optional<Universe::PredictionPackage> Brain::operator()(){
     }
 
 
-            // Clean-up code
+            
             Py_XDECREF(pFunc);
             Py_DECREF(pModule);
             PyGILState_Release(gstate);
@@ -108,21 +104,14 @@ void BrainManager::loadScriptsToQueue() {
 
 void BrainManager::executeScript(const std::string& scriptPath) {
     Brain brain(scriptPath, initialData);
-    auto result = brain();  // result is now std::optional<PredictionPackage>
+    auto result = brain();
 
     std::filesystem::path path(scriptPath);
     std::string scriptName = path.filename().string();
 
     if (result.has_value()) {
-        // Directly store the result
         scriptResults[scriptName] = *result;
         std::cout << "Result stored for script: " << scriptName << std::endl;
-
-        // Display the processed result
-        /*for (const auto& prediction : result->predictionPackage) {
-            std::cout << "Company Index: " << prediction.companyIndex
-                      << ", Prediction: " << prediction.prediction << std::endl;
-        }*/
     } else {
         std::cerr << "Script execution failed or returned no result: " << scriptPath << std::endl;
     }
@@ -133,23 +122,23 @@ void BrainManager::initializePython() {
         PyConfig config;
         PyStatus status;
 
-        // Initialize the PyConfig with default values
+        
         PyConfig_InitPythonConfig(&config);
 
-        // Set the Python executable path
+        
         std::wstring pythonExecutable = L"C:/Projects/Tools/python.exe";
         status = PyConfig_SetString(&config, &config.program_name, pythonExecutable.c_str());
 
-        // Check for errors
+        
         if (PyStatus_Exception(status)) {
             PyConfig_Clear(&config);
             Py_ExitStatusException(status);
         }
 
-        // Initialize Python with the configuration
+        
         status = Py_InitializeFromConfig(&config);
 
-        // Check for errors in initialization
+        
         if (PyStatus_Exception(status)) {
             PyConfig_Clear(&config);
             Py_ExitStatusException(status);
@@ -157,8 +146,8 @@ void BrainManager::initializePython() {
 
         PyConfig_Clear(&config);
         
-        // Add the 'limbs' directory to the Python search path
-        PyObject* sysPath = PySys_GetObject("path"); // Borrowed reference, no need to DECREF
+        
+        PyObject* sysPath = PySys_GetObject("path");
         PyObject* path = PyUnicode_FromString("C:/Projects/AI/Self-Training/EvolutionUtanBinary/limbs");
         PyList_Append(sysPath, path);
         Py_DECREF(path);
@@ -199,7 +188,7 @@ void BrainManager::printData(const Universe::PreCompleteData& preCompleteData) {
                       << ", Volume: " << entry.volume
                       << std::endl;
         }
-        std::cout << std::endl; // Add an extra line for readability between companies
+        std::cout << std::endl;
     }
 }
 
@@ -222,9 +211,7 @@ void BrainManager::runBrains() {
 
         std::cout << "Total scripts executed: " << totalScriptsRun << std::endl;
 
-
         scriptsQueue.push(scriptPath);
     }
-    //printPredictionResults(scriptResults);
     finalizePython();
 }

@@ -2,11 +2,9 @@
 #define BRAINIMPL_HPP
 
 //Libraries
-
 #include <optional>
 #include <queue>
 #include <fstream>
-
 
 
 //Files

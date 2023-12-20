@@ -1,24 +1,12 @@
-#include "evalHandlerImpl.hpp"
-#include <fstream>
-#include "C:/Projects/Tools/json-develop/single_include/nlohmann/json.hpp"
+
+//Libraries
 #include <sstream>
 #include <cmath>
+#include <fstream>
 
-
-double EvaluationHandler::calculateRMSE(const std::vector<double>& predicted, const std::vector<double>& actual) {
-    if (predicted.size() != actual.size() || predicted.empty()) {
-        throw std::invalid_argument("Vectors must be of the same size and not empty.");
-    }
-
-    double sumSquaredErrors = 0.0;
-    for (size_t i = 0; i < predicted.size(); ++i) {
-        double difference = predicted[i] - actual[i];
-        sumSquaredErrors += difference * difference;
-    }
-
-    double meanSquaredError = sumSquaredErrors / predicted.size();
-    return std::sqrt(meanSquaredError);
-}
+//Files
+#include "C:/Projects/Tools/json-develop/single_include/nlohmann/json.hpp"
+#include "evalHandlerImpl.hpp"
 
 double EvaluationHandler::calculateMAPE(const std::vector<double>& predicted, const std::vector<double>& actual) {
     if (predicted.size() != actual.size() || predicted.empty()) {
@@ -34,7 +22,6 @@ double EvaluationHandler::calculateMAPE(const std::vector<double>& predicted, co
 
     return (totalPercentageError / predicted.size()) * 100.0;
 }
-
 
 void EvaluationHandler::comparePredictionsWithActualData() {
     scriptMAPEResults.clear();
